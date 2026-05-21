@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DSR Portal — District Survey Report Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0a1628;--navy-mid:#0f2044;--navy-light:#1a3260;
+  --gold:#c9a227;--gold-light:#e8c250;--gold-pale:#f5e6b0;
+  --teal:#0d7a72;--teal-light:#12a89e;--teal-pale:#d0f0ee;
+  --slate:#2d3748;--slate-mid:#4a5568;--slate-light:#718096;
+  --bg:#f0f2f7;--surface:#ffffff;--surface-2:#f8f9fc;--surface-3:#eef0f6;
+  --border:#e2e5ef;--border-dark:#c8ccdb;
+  --text:#1a202c;--text-muted:#4a5568;--text-faint:#8492a6;
+  --red:#c0392b;--green:#1a7a4a;--amber:#b7791f;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;--r-2xl:28px;
+  --sh-sm:0 1px 3px rgba(10,22,40,.08),0 1px 2px rgba(10,22,40,.06);
+  --sh-md:0 4px 16px rgba(10,22,40,.1),0 2px 6px rgba(10,22,40,.06);
+  --sh-lg:0 12px 40px rgba(10,22,40,.14),0 4px 12px rgba(10,22,40,.08);
+  --sh-xl:0 24px 60px rgba(10,22,40,.18);
+  --sidebar:280px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+button,input,textarea,select{font:inherit;outline:none}
+button{cursor:pointer}
+
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);min-height:100vh;background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto;overflow-x:hidden}
+.main-area{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--sh-sm)}
+.page-body{padding:32px;flex:1}
+
+/* ── SIDEBAR ── */
+.sb-brand{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{display:flex;align-items:center;gap:12px}
+.sb-logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--navy);flex-shrink:0}
+.sb-logo-text h1{font-family:'Lora',serif;font-size:16px;font-weight:700;color:#fff;line-height:1.2}
+.sb-logo-text p{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.03em}
+
+.sb-user{padding:16px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-user-info{min-width:0}
+.sb-user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
+
+.sb-nav{padding:12px 12px;flex:1}
+.sb-group{margin-bottom:20px}
+.sb-group-label{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 8px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-md);color:rgba(255,255,255,.6);font-size:13px;font-weight:500;cursor:pointer;transition:.18s;border:1px solid transparent;width:100%;background:none;text-align:left;position:relative}
+.sb-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.sb-item.active{background:rgba(201,162,39,.15);border-color:rgba(201,162,39,.3);color:var(--gold-light)}
+.sb-item .sb-icon{width:32px;height:32px;border-radius:var(--r-sm);background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:.18s}
+.sb-item.active .sb-icon{background:rgba(201,162,39,.2)}
+.sb-item .sb-badge{margin-left:auto;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px}
+.sb-item.active .sb-badge{background:var(--gold);color:var(--navy)}
+
+.sb-status{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:8px;display:inline-block;box-shadow:0 0 0 2px rgba(34,197,94,.3)}
+.sb-status-text{font-size:11px;color:rgba(255,255,255,.4)}
+
+/* ── TOPBAR ── */
+.tb-left h2{font-size:17px;font-weight:700;color:var(--navy)}
+.tb-left p{font-size:12px;color:var(--text-faint);margin-top:2px}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-btn{padding:8px 16px;border-radius:var(--r-md);font-size:13px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text-muted);transition:.18s;box-shadow:var(--sh-sm)}
+.tb-btn:hover{border-color:var(--border-dark);box-shadow:var(--sh-md)}
+.tb-btn-primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.tb-btn-primary:hover{background:var(--navy-mid)}
+.tb-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:var(--gold);color:var(--navy)}
+.tb-btn-gold:hover{filter:brightness(1.05)}
+
+/* ── VIEWS ── */
+.view{display:none;animation:slideUp .25s ease}
+.view.active{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+.sec-title{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--navy)}
+.sec-sub{font-size:13px;color:var(--text-faint);margin-top:4px;max-width:60ch}
+.sec-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--sh-sm);overflow:hidden}
+.card-pad{padding:24px}
+.card-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:700;color:var(--navy)}
+.card-sub{font-size:12px;color:var(--text-faint);margin-top:2px}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.g-full{grid-column:1/-1}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r-md);font-size:13px;font-weight:600;border:1.5px solid;cursor:pointer;transition:.18s;box-shadow:var(--sh-sm);text-decoration:none;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--sh-md)}
+.btn-navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn-navy:hover{background:var(--navy-mid)}
+.btn-teal{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-teal:hover{background:var(--teal-light)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:var(--gold);color:var(--navy)}
+.btn-outline{background:transparent;border-color:var(--border-dark);color:var(--text-muted)}
+.btn-outline:hover{background:var(--surface-2);border-color:var(--border-dark);color:var(--text)}
+.btn-danger{background:#fff5f5;border-color:#fca5a5;color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:var(--r-sm)}
+
+/* ── BADGES & TAGS ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge-navy{background:rgba(10,22,40,.08);color:var(--navy)}
+.badge-teal{background:var(--teal-pale);color:var(--teal)}
+.badge-gold{background:var(--gold-pale);color:#92740a}
+.badge-green{background:#dcfce7;color:var(--green)}
+.badge-red{background:#fee2e2;color:var(--red)}
+.badge-amber{background:#fef3c7;color:var(--amber)}
+.badge-num{width:22px;height:22px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;flex-shrink:0}
+
+/* ── STAT CARDS ── */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px 24px;box-shadow:var(--sh-sm);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--teal))}
+.stat-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint)}
+.stat-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1;margin-top:6px;font-family:'Lora',serif}
+.stat-sub{font-size:11px;color:var(--text-faint);margin-top:4px}
+
+/* ── FORMS ── */
+.field-group{display:grid;gap:16px}
+.field-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.field-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.field-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.field-full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;color:var(--slate);letter-spacing:.01em}
+.field input,.field textarea,.field select{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px;transition:.18s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,122,114,.12)}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5}
+.field-hint{font-size:11px;color:var(--text-faint);margin-top:2px}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-lg)}
+.tbl-wrap table{width:100%;border-collapse:collapse;min-width:600px;font-size:12.5px}
+.tbl-wrap thead tr{background:var(--navy)}
+.tbl-wrap thead th{color:rgba(255,255,255,.85);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:10px 14px;text-align:left;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
+.tbl-wrap thead th:last-child{border-right:none}
+.tbl-wrap tbody tr{border-bottom:1px solid var(--border);transition:.15s}
+.tbl-wrap tbody tr:hover{background:var(--surface-2)}
+.tbl-wrap tbody tr:last-child{border-bottom:none}
+.tbl-wrap td{padding:10px 14px;vertical-align:top;border-right:1px solid var(--border)}
+.tbl-wrap td:last-child{border-right:none}
+.tbl-wrap td input,.tbl-wrap td textarea,.tbl-wrap td select{width:100%;border:none;background:transparent;padding:0;color:var(--text);font-size:12.5px;line-height:1.5}
+.tbl-wrap td textarea{resize:none;min-height:32px}
+
+/* ── PROGRESS & STATUS ── */
+.progress-bar{height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--teal-light));transition:width .4s ease}
+
+.step-bar{display:flex;gap:0;margin-bottom:32px}
+.step{flex:1;position:relative;text-align:center}
+.step::before{content:'';position:absolute;top:15px;left:50%;right:-50%;height:2px;background:var(--border);z-index:0}
+.step:last-child::before{display:none}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;margin:0 auto;position:relative;z-index:1;font-size:12px;font-weight:700;color:var(--text-faint);transition:.3s}
+.step.done .step-dot{background:var(--teal);border-color:var(--teal);color:#fff}
+.step.active .step-dot{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 0 0 4px rgba(10,22,40,.15)}
+.step-label{font-size:11px;color:var(--text-faint);margin-top:6px;font-weight:500}
+.step.done .step-label,.step.active .step-label{color:var(--text)}
+
+/* ── UPLOAD ZONES ── */
+.upload-zone{border:2px dashed var(--border-dark);border-radius:var(--r-xl);padding:40px 24px;text-align:center;transition:.25s;cursor:pointer;background:var(--surface-2);position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--teal);background:var(--teal-pale)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:36px;margin-bottom:12px;display:block}
+.upload-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.upload-hint{font-size:12px;color:var(--text-faint)}
+
+/* ── FILE LIST ── */
+.file-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);transition:.15s}
+.file-item:hover{box-shadow:var(--sh-sm)}
+.file-icon{width:40px;height:40px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-size:11px;color:var(--text-faint);margin-top:2px}
+
+/* ── CHAPTER ROW ── */
+.chapter-item{display:grid;grid-template-columns:40px 1fr auto;gap:16px;align-items:start;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);transition:.15s;box-shadow:var(--sh-sm)}
+.chapter-item:hover{border-color:var(--border-dark);box-shadow:var(--sh-md)}
+.ch-num{width:40px;height:40px;border-radius:var(--r-md);background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.ch-content{display:flex;flex-direction:column;gap:6px}
+.ch-name{font-size:13px;font-weight:700;color:var(--navy)}
+.ch-edit{width:100%;border:1.5px solid transparent;border-radius:var(--r-sm);padding:4px 8px;font-size:13px;font-weight:600;color:var(--navy);background:transparent;transition:.15s}
+.ch-edit:hover,.ch-edit:focus{border-color:var(--border);background:var(--surface-2)}
+
+/* ── CHART AREA ── */
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-sm)}
+.chart-box canvas{max-height:320px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.kpi-item{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
+.kpi-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
+.kpi-val{font-size:18px;font-weight:800;color:var(--teal);margin-top:4px;line-height:1}
+.kpi-unit{font-size:11px;font-weight:500;color:var(--text-faint)}
+
+/* ── ANNEXURE SECTION ── */
+.anx-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-sm);margin-bottom:20px}
+.anx-header{background:var(--navy);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.anx-header h3{color:#fff;font-size:14px;font-weight:700}
+.anx-header p{color:rgba(255,255,255,.5);font-size:11px;margin-top:2px}
+.anx-header-actions{display:flex;gap:8px}
+.anx-body{padding:20px 24px}
+.anx-section-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;margin-top:20px}
+.anx-section-label:first-child{margin-top:0}
+
+/* ── SIGNATURE ── */
+.sig-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-sm);position:relative;overflow:hidden}
+.sig-card::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(0,0,0,.015) 8px,rgba(0,0,0,.015) 9px)}
+.sig-num{position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--navy-light);color:rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.sig-role{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px}
+.sig-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.sig-dept{font-size:12px;color:var(--text-faint);margin-bottom:16px}
+.sig-status-pending{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--amber);font-weight:600}
+.sig-status-done{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-weight:600}
+.sig-time{font-size:11px;color:var(--text-faint);margin-top:4px}
+
+/* ── NOTIFICATION ── */
+.notif{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--r-lg);border:1px solid;font-size:12px;margin-bottom:8px}
+.notif-info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.notif-success{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.notif-warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.notif-error{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+
+/* ── TIMELINE ── */
+.timeline{display:flex;flex-direction:column;gap:0}
+.timeline-item{display:flex;gap:16px;padding-bottom:20px;position:relative}
+.timeline-item:last-child{padding-bottom:0}
+.tl-line{position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border)}
+.timeline-item:last-child .tl-line{display:none}
+.tl-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;position:relative;z-index:1}
+.tl-dot.active{border-color:var(--teal);background:var(--teal);color:#fff}
+.tl-dot.done{border-color:var(--green);background:var(--green);color:#fff}
+.tl-content{flex:1;padding-top:4px}
+.tl-title{font-size:13px;font-weight:700;color:var(--navy)}
+.tl-sub{font-size:11px;color:var(--text-faint);margin-top:2px}
+
+/* ── DASHBOARD HERO ── */
+.hero-banner{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 50%,var(--navy-light) 100%);border-radius:var(--r-2xl);padding:32px 36px;position:relative;overflow:hidden;box-shadow:var(--sh-lg)}
+.hero-banner::before{content:'';position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;background:rgba(201,162,39,.08);pointer-events:none}
+.hero-banner::after{content:'';position:absolute;right:60px;bottom:-80px;width:200px;height:200px;border-radius:50%;background:rgba(13,122,114,.12);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,162,39,.2);border:1px solid rgba(201,162,39,.35);color:var(--gold-light);padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:16px}
+.hero-title{font-family:'Lora',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:8px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.55);max-width:55ch;line-height:1.65}
+.hero-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+.spacer{height:20px}
+.txt-tiny{font-size:11px;color:var(--text-faint)}
+.txt-sm{font-size:12.5px;color:var(--text-muted)}
+.txt-bold{font-weight:700}
+.txt-teal{color:var(--teal)}
+.txt-gold{color:var(--gold)}
+.txt-navy{color:var(--navy)}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text-faint)}
+.empty-state span{font-size:40px;display:block;margin-bottom:12px}
+.empty-state p{font-size:13px;margin-top:4px}
+
+/* ── GOV PDF PREVIEW ── */
+.gov-preview{background:#e5e7eb;padding:24px}
+.gov-page{width:100%;max-width:800px;margin:0 auto 20px;background:#fff;padding:50px 55px;box-shadow:var(--sh-xl);border:1px solid #ccc;position:relative;font-family:'Times New Roman',serif}
+.gov-header-line{text-align:center;font-size:11px;color:#1a3a8f;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #1a3a8f;padding-bottom:8px;margin-bottom:6px}
+.gov-annexure-tag{position:absolute;right:50px;top:50px;font-size:11px;font-weight:700;color:#333;border:1px solid #333;padding:2px 8px}
+.gov-page-title{font-size:16px;font-weight:700;text-align:center;margin:14px 0 18px;color:#000}
+.gov-section-title{font-size:12px;font-weight:700;margin:16px 0 8px;color:#000;text-decoration:underline}
+.gov-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px}
+.gov-table th{background:#dce3f0;border:1px solid #333;padding:5px 7px;font-weight:700;text-align:left}
+.gov-table td{border:1px solid #555;padding:5px 7px;vertical-align:top}
+.gov-footer-line{position:absolute;bottom:30px;left:50px;right:50px;border-top:1px solid #999;padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:#555}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main-area{margin-left:0}
+  .g2,.g3,.g4,.field-row,.field-row-3,.field-row-4,.kpi-grid{grid-template-columns:1fr}
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:99px}
+
+/* ── ANIMATIONS ── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pulsing{animation:pulse 2s infinite}
+
+/* ── GRAPH INPUT BOX ── */
+.graph-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-md);margin-bottom:24px}
+.graph-section-header{background:linear-gradient(to right,var(--navy),var(--navy-mid));padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.graph-section-header h3{color:#fff;font-size:14px;font-weight:700}
+.graph-section-body{padding:24px}
+.calc-result-bar{background:linear-gradient(135deg,var(--teal-pale),#e8f7f6);border:1px solid var(--teal-pale);border-radius:var(--r-lg);padding:16px 20px;margin-top:16px}
+.calc-result-bar .result-label{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.06em}
+.calc-result-bar .result-val{font-size:22px;font-weight:800;color:var(--navy)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <div class="sb-logo-icon">DSR</div>
+        <div class="sb-logo-text">
+          <h1>DSR Portal</h1>
+          <p>Mining Survey Management</p>
+        </div>
+      </div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar">JD</div>
+      <div class="sb-user-info">
+        <div class="sb-user-name">Jalandhar District</div>
+        <div class="sb-user-role">Report Coordinator</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-group">
+        <div class="sb-group-label">Overview</div>
+        <button class="sb-item active" onclick="showView('dashboard',this)">
+          <span class="sb-icon">📊</span> Dashboard
+          <span class="sb-badge" id="badge-complete">0%</span>
+        </button>
+        <button class="sb-item" onclick="showView('workflow',this)">
+          <span class="sb-icon">📋</span> Report Workflow
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Report Sections</div>
+        <button class="sb-item" onclick="showView('front-matter',this)">
+          <span class="sb-icon">📄</span> Front Matter
+        </button>
+        <button class="sb-item" onclick="showView('chapters',this)">
+          <span class="sb-icon">📚</span> Chapters
+          <span class="sb-badge">10</span>
+        </button>
+        <button class="sb-item" onclick="showView('plates',this)">
+          <span class="sb-icon">🗂️</span> Plate Section
+        </button>
+        <button class="sb-item" onclick="showView('graphs',this)">
+          <span class="sb-icon">📈</span> Cross Sections
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Annexures</div>
+        <button class="sb-item" onclick="showView('annexure1',this)">
+          <span class="sb-icon">📑</span> Annexure I — Sources
+        </button>
+        <button class="sb-item" onclick="showView('annexure2',this)">
+          <span class="sb-icon">📑</span> Annexure II — Leases
+        </button>
+        <button class="sb-item" onclick="showView('annexure3',this)">
+          <span class="sb-icon">📑</span> Annexure III — Clusters
+        </button>
+        <button class="sb-item" onclick="showView('annexure4',this)">
+          <span class="sb-icon">📑</span> Annexure IV — Transport
+        </button>
+        <button class="sb-item" onclick="showView('tables',this)">
+          <span class="sb-icon">📊</span> Summary Tables
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Finalize</div>
+        <button class="sb-item" onclick="showView('esignature',this)">
+          <span class="sb-icon">✍️</span> E-Signatures
+          <span class="sb-badge" style="background:#c0392b">2</span>
+        </button>
+        <button class="sb-item" onclick="showView('final-pdf',this)">
+          <span class="sb-icon">📥</span> Generate PDF
+        </button>
+      </div>
+    </nav>
+    <div class="sb-status">
+      <span class="sb-status-dot"></span>
+      <span class="sb-status-text">System Online — EMGSM 2020</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="topbar">
+      <div class="tb-left">
+        <h2 id="page-title">Dashboard</h2>
+        <p id="page-sub">District Survey Report — Jalandhar District Sand Mining</p>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" onclick="showView('workflow',document.querySelector('[onclick*=workflow]'))">📋 View Workflow</button>
+        <button class="tb-btn tb-btn-gold" onclick="generateFinalPDF()">⬇ Download PDF</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- ═══════════════════════════════════
+           VIEW: DASHBOARD
+      ═══════════════════════════════════ -->
+      <div id="view-dashboard" class="view active">
+        <div class="hero-banner">
+          <div class="hero-badge">🏛 Government of Punjab</div>
+          <div class="hero-title">District Survey Report<br>Management Portal</div>
+          <div class="hero-sub">Jalandhar District · Sand Mining · EMGSM 2020 Compliance Framework · Prepare, review, and digitally sign the complete DSR for official submission.</div>
+          <div class="hero-actions">
+            <button class="btn btn-gold" onclick="showView('front-matter',document.querySelectorAll('.sb-item')[3])">Start Editing Report</button>
+            <button class="btn btn-outline" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2)" onclick="showView('workflow',document.querySelectorAll('.sb-item')[1])">View Workflow →</button>
+          </div>
+        </div>
+
+        <div class="g4" style="margin-top:20px">
+          <div class="stat-card" style="--accent:var(--teal)">
+            <div class="stat-label">Total Chapters</div>
+            <div class="stat-val">10</div>
+            <div class="stat-sub">All sections defined</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--gold)">
+            <div class="stat-label">Annexures</div>
+            <div class="stat-val">4</div>
+            <div class="stat-sub">I–IV configured</div>
+          </div>
+          <div class="stat-card" style="--accent:#6366f1">
+            <div class="stat-label">Files Uploaded</div>
+            <div class="stat-val" id="dash-files">0</div>
+            <div class="stat-sub">Plates &amp; documents</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--red)">
+            <div class="stat-label">Signatures Pending</div>
+            <div class="stat-val" id="dash-sigs">5</div>
+            <div class="stat-sub">Awaiting authorities</div>
+          </div>
+        </div>
+
+        <div class="g2" style="margin-top:0">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Report Completion</div>
+                <div class="card-sub">Section-wise progress tracking</div>
+              </div>
+            </div>
+            <div style="padding:20px 24px">
+              <div id="progress-list"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Activity</div>
+            </div>
+            <div style="padding:20px 24px">
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="tl-line"></div>
+                  <div class="tl-dot done">✓</div>
+                  <div class="tl-content">
+                    <div class="tl-title">Report Initiated</div>
+                    <div class="tl-sub">May 21, 2026 · System setup complete</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-line"></div>
+                  <div class="tl-dot active">2</div>
+                  <div class="tl-content">
+                    <div class="tl-title">Data Entry In Progress</div>
+                    <div class="tl-sub">Front matter &amp; chapters editable</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-line"></div>
+                  <div class="tl-dot">3</div>
+                  <div class="tl-content">
+                    <div class="tl-title">Annexures &amp; Plates</div>
+                    <div class="tl-sub">Upload templates and Excel files</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-line"></div>
+                  <div class="tl-dot">4</div>
+                  <div class="tl-content">
+                    <div class="tl-title">Authority Review &amp; Signatures</div>
+                    <div class="tl-sub">Sequential e-signature hierarchy</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot">5</div>
+                  <div class="tl-content">
+                    <div class="tl-title">Final PDF Generation</div>
+                    <div class="tl-sub">Merged, stamped, downloadable</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: WORKFLOW
+      ═══════════════════════════════════ -->
+      <div id="view-workflow" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Report Workflow</div><div class="sec-sub">Complete these steps in order to generate the final DSR PDF for submission</div></div>
+        </div>
+        <div class="step-bar">
+          <div class="step done"><div class="step-dot">✓</div><div class="step-label">Front Matter</div></div>
+          <div class="step active"><div class="step-dot">2</div><div class="step-label">Chapters</div></div>
+          <div class="step"><div class="step-dot">3</div><div class="step-label">Plates</div></div>
+          <div class="step"><div class="step-dot">4</div><div class="step-label">Annexures</div></div>
+          <div class="step"><div class="step-dot">5</div><div class="step-label">Review</div></div>
+          <div class="step"><div class="step-dot">6</div><div class="step-label">Sign</div></div>
+          <div class="step"><div class="step-dot">7</div><div class="step-label">Submit</div></div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">📤 What Anyone Can Do</div></div>
+            <div class="card-pad">
+              <div class="notif notif-success" style="margin-bottom:16px">✅ All team members can upload, edit, and prepare report sections.</div>
+              <ul style="font-size:13px;color:var(--text-muted);line-height:2;padding-left:18px">
+                <li>Fill front matter (title, preface, district)</li>
+                <li>Edit chapter summaries</li>
+                <li>Upload plate PDFs &amp; images</li>
+                <li>Fill cross-section data &amp; generate graphs</li>
+                <li>Download Excel templates &amp; upload filled data</li>
+                <li>Preview annexures before submission</li>
+                <li>Fill all data tables</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🔐 E-Signature Hierarchy (Sequential)</div></div>
+            <div class="card-pad">
+              <div class="notif notif-warn" style="margin-bottom:16px">⚠️ Signatures must be completed in order. Each authority reviews before the next is notified.</div>
+              <div class="timeline">
+                <div class="timeline-item"><div class="tl-line"></div><div class="tl-dot done">1</div><div class="tl-content"><div class="tl-title">Sub-Divisional Officer</div><div class="tl-sub">First signatory — data verification</div></div></div>
+                <div class="timeline-item"><div class="tl-line"></div><div class="tl-dot active">2</div><div class="tl-content"><div class="tl-title">District Mining Officer</div><div class="tl-sub">Technical review &amp; approval</div></div></div>
+                <div class="timeline-item"><div class="tl-line"></div><div class="tl-dot">3</div><div class="tl-content"><div class="tl-title">Deputy Commissioner</div><div class="tl-sub">Administrative sanction</div></div></div>
+                <div class="timeline-item"><div class="tl-line"></div><div class="tl-dot">4</div><div class="tl-content"><div class="tl-title">Director, Mining</div><div class="tl-sub">State-level final approval</div></div></div>
+                <div class="timeline-item"><div class="tl-dot">5</div><div class="tl-content"><div class="tl-title">Principal Secretary</div><div class="tl-sub">Final submission clearance</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: FRONT MATTER
+      ═══════════════════════════════════ -->
+      <div id="view-front-matter" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Front Matter</div><div class="sec-sub">Cover page, content page, and preface. Upload PDFs or fill templates below.</div></div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Cover Page</div><div class="card-sub">Option A: Upload PDF · Option B: Fill template</div></div>
+            <div class="card-pad">
+              <div class="upload-zone" onclick="triggerUpload('cover-pdf')">
+                <input type="file" id="cover-pdf" accept=".pdf" style="display:none" onchange="handleFrontUpload(event,'cover')">
+                <span class="upload-icon">📄</span>
+                <div class="upload-title">Upload Cover Page PDF</div>
+                <div class="upload-hint">Click to browse · PDF files only</div>
+              </div>
+              <div style="text-align:center;color:var(--text-faint);font-size:12px;margin:12px 0">— OR fill template —</div>
+              <div class="field-group">
+                <div class="field"><label>Report Title</label><input type="text" id="fm-title" value="District Survey Report for Sand Mining" oninput="updateProgress()"></div>
+                <div class="field-row">
+                  <div class="field"><label>District</label><input type="text" id="fm-district" value="Jalandhar"></div>
+                  <div class="field"><label>State</label><input type="text" id="fm-state" value="Punjab"></div>
+                </div>
+                <div class="field-row">
+                  <div class="field"><label>Report Year</label><input type="text" id="fm-year" value="2025-26"></div>
+                  <div class="field"><label>Version</label><input type="text" id="fm-ver" value="Final Draft"></div>
+                </div>
+                <div class="field"><label>Prepared By</label><input type="text" value="Sub-Divisional Committee, Jalandhar District"></div>
+                <div class="field"><label>Assisted By</label><input type="text" value="RSP Green Development and Laboratories Pvt. Ltd."></div>
+              </div>
+              <div id="cover-uploaded" style="display:none;margin-top:12px"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Preface</div><div class="card-sub">Option A: Upload PDF · Option B: Fill template</div></div>
+            <div class="card-pad">
+              <div class="upload-zone" onclick="triggerUpload('preface-pdf')">
+                <input type="file" id="preface-pdf" accept=".pdf" style="display:none" onchange="handleFrontUpload(event,'preface')">
+                <span class="upload-icon">📝</span>
+                <div class="upload-title">Upload Preface PDF</div>
+                <div class="upload-hint">Click to browse · PDF files only</div>
+              </div>
+              <div style="text-align:center;color:var(--text-faint);font-size:12px;margin:12px 0">— OR fill template —</div>
+              <div class="field"><label>Preface Text</label>
+                <textarea id="fm-preface" rows="8">This District Survey Report (DSR) for Jalandhar District has been prepared in compliance with the Enforcement and Monitoring Guidelines for Sand Mining (EMGSM) 2020. The report provides a comprehensive assessment of sand mining activities, river morphology, mineral deposits, replenishment studies, and transportation routes within the district.</textarea>
+              </div>
+              <div id="preface-uploaded" style="display:none;margin-top:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: CHAPTERS
+      ═══════════════════════════════════ -->
+      <div id="view-chapters" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Report Chapters</div><div class="sec-sub">10 chapters as per EMGSM 2020 specification. Edit headings and summaries.</div></div>
+          <div class="sec-actions"><button class="btn btn-navy" onclick="addChapter()">+ Add Chapter</button></div>
+        </div>
+        <div id="chapter-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: PLATES
+      ═══════════════════════════════════ -->
+      <div id="view-plates" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Plate Section</div><div class="sec-sub">Upload PDFs, images, maps. Each plate becomes a page in the final report.</div></div>
+          <div class="sec-actions">
+            <label class="btn btn-teal" style="cursor:pointer">+ Upload Files <input type="file" multiple accept=".pdf,image/*" hidden onchange="handlePlateUpload(event)"></label>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="notif notif-info" style="margin-bottom:16px">📌 <strong>Tip:</strong> Images are automatically converted to PDF pages in the final document. Upload in the order you want them to appear.</div>
+            <div id="plate-list" style="display:flex;flex-direction:column;gap:10px">
+              <div class="empty-state"><span>🗂️</span><div class="txt-bold">No plates uploaded yet</div><p>Click "Upload Files" to add PDFs and images</p></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Plate Section Tools</div></div>
+            <div class="card-pad">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="file-item"><div class="file-icon" style="background:#fee2e2">📊</div><div class="file-info"><div class="file-name">Cross-Section Graph Tool</div><div class="file-meta">Auto-generates graphs from elevation data</div></div><button class="btn btn-xs btn-teal" onclick="showView('graphs',document.querySelectorAll('.sb-item')[7])">Open →</button></div>
+                <div class="file-item"><div class="file-icon" style="background:#dbeafe">🗺️</div><div class="file-info"><div class="file-name">Route Map Attachments</div><div class="file-meta">GPS and GIS map integration</div></div><span class="badge badge-amber">In Annexure IV</span></div>
+                <div class="file-item"><div class="file-icon" style="background:#d1fae5">📸</div><div class="file-info"><div class="file-name">Site Photographs</div><div class="file-meta">Field survey images</div></div><label class="btn btn-xs btn-outline" style="cursor:pointer">Upload <input type="file" accept="image/*" multiple hidden onchange="handlePlateUpload(event)"></label></div>
+                <div class="file-item"><div class="file-icon" style="background:#ede9fe">📋</div><div class="file-info"><div class="file-name">Topography Maps</div><div class="file-meta">GIS / Survey of India sheets</div></div><label class="btn btn-xs btn-outline" style="cursor:pointer">Upload <input type="file" accept=".pdf" hidden onchange="handlePlateUpload(event)"></label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: CROSS SECTIONS (GRAPHS)
+      ═══════════════════════════════════ -->
+      <div id="view-graphs" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Cross Section Sand Bar Generator</div><div class="sec-sub">Input elevation arrays → Auto-calculates thickness, volume, and allowed excavation tonnes (EMGSM 60%)</div></div>
+          <div class="sec-actions"><button class="btn btn-navy" onclick="addGraphSection()">+ Add Cross Section</button></div>
+        </div>
+        <div id="graph-sections"></div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: ANNEXURE I
+      ═══════════════════════════════════ -->
+      <div id="view-annexure1" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Annexure I — Sand/M-Sand Sources</div><div class="sec-sub">Details of rivers, de-siltation locations, patta lands, and M-Sand plants</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadXLTemplate('anx1')">⬇ Excel Template</button>
+            <label class="btn btn-teal btn-sm" style="cursor:pointer">⬆ Upload Excel <input type="file" accept=".xlsx,.xls" hidden onchange="uploadExcel(event,'anx1')"></label>
+          </div>
+        </div>
+        <div class="notif notif-info" style="margin-bottom:20px">ℹ️ Download the Excel template, fill in your data, then upload it. The system will auto-generate the formatted PDF page.</div>
+
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Section a) Rivers</h3><p>Perennial and non-perennial rivers in the district</p></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx1-rivers')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>#</th><th>River Name / M-Sand Plant</th><th>Total Stretch (KM)</th><th>Type of River</th><th></th></tr></thead>
+                <tbody id="anx1-rivers">
+                  <tr><td>1</td><td><input value="Sutlej"></td><td><input value="90.66" type="number"></td><td><select><option>Perennial</option><option>Non-Perennial</option></select></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                  <tr><td>2</td><td><input value="Beas"></td><td><input value="65.20" type="number"></td><td><select><option>Perennial</option><option>Non-Perennial</option></select></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Section b) De-Siltation Locations</h3><p>Lakes, Ponds, Dams etc.</p></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx1-desilt')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Name of Reservoir/Dam</th><th>Controlled By</th><th>Latitude</th><th>Longitude</th><th>District</th><th>Tehsil</th><th>Village</th><th>Size (Ha)</th><th></th></tr></thead>
+                <tbody id="anx1-desilt">
+                  <tr><td>1</td><td><input value="Sutlej Reservoir"></td><td><input value="State Govt."></td><td><input value="31°00'56&quot;N"></td><td><input value="75°54'59&quot;E"></td><td><input value="Jalandhar"></td><td><input value="Phillaur"></td><td><input value="Powari"></td><td><input value="10.93" type="number"></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Section c) Patta Lands / Khatedari Land</h3></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx1-patta')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Owner</th><th>SL. No</th><th>Area (Ha)</th><th>District</th><th>Tehsil</th><th>Village</th><th>Agricultural Land</th><th></th></tr></thead>
+                <tbody id="anx1-patta">
+                  <tr><td>1</td><td><textarea rows="2">Owner Name</textarea></td><td><textarea rows="2">KH-001</textarea></td><td><input value="5.20" type="number"></td><td><input value="Jalandhar"></td><td><input value="Phillaur"></td><td><input value="Kadiana"></td><td><select><option>Yes</option><option>No</option></select></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Section d) M-Sand Plants</h3></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx1-msand')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Plant Name</th><th>Owner</th><th>District</th><th>Tehsil</th><th>Village</th><th>Geo-location</th><th>Qty (T/Annum)</th><th>Existing/Proposed</th><th></th></tr></thead>
+                <tbody id="anx1-msand">
+                  <tr><td>1</td><td><input value="Not Available"></td><td><input value="Not Available"></td><td><input value="Jalandhar"></td><td><input value="Phillaur"></td><td><input value="—"></td><td><input value="31.02°N, 75.30°E"></td><td><input value="0" type="number"></td><td><select><option>Existing</option><option>Proposed</option></select></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-navy" onclick="previewAnnexure('I')">👁 Preview as PDF Page</button>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: ANNEXURE II
+      ═══════════════════════════════════ -->
+      <div id="view-annexure2" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Annexure II — Mining Leases</div><div class="sec-sub">List of potential mining leases (existing and proposed)</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadXLTemplate('anx2')">⬇ Excel Template</button>
+            <label class="btn btn-teal btn-sm" style="cursor:pointer">⬆ Upload Excel <input type="file" accept=".xlsx,.xls" hidden onchange="uploadExcel(event,'anx2')"></label>
+          </div>
+        </div>
+        <div class="notif notif-info" style="margin-bottom:20px">ℹ️ Supports multi-line GPS coordinates in DMS (31°04'48.86"N) or decimal format.</div>
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Mining Leases Table</h3><p>Existing &amp; Proposed River Leases</p></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx2-leases')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Sl.</th><th>River Details</th><th>SandBar Code</th><th>Lease Details</th><th>Area (Ha)</th><th>Latitude</th><th>Longitude</th><th>Distance (KM)</th><th>Within 500m</th><th>Density (gm/cc)</th><th>Depth (m)</th><th>Excavation (MT/Yr)</th><th>Mineral</th><th>Status</th><th>Remarks</th><th></th></tr></thead>
+                <tbody id="anx2-leases">
+                  <tr>
+                    <td>1</td>
+                    <td><textarea rows="2">Jalandhar Sutlej</textarea></td>
+                    <td><input value="SB-01"></td>
+                    <td><textarea rows="3">Jalandhar Sutlej-1&#10;Vill-Kadiana, Block-Phillaur</textarea></td>
+                    <td><input value="24.50" type="number"></td>
+                    <td><textarea rows="3">31°04'48.86"N&#10;31°04'18.21"N&#10;31°04'07.24"N</textarea></td>
+                    <td><textarea rows="3">75°53'39.66"E&#10;75°53'47.89"E&#10;75°53'40.88"E</textarea></td>
+                    <td><input value="0.73" type="number"></td>
+                    <td><select><option>No</option><option>Yes</option></select></td>
+                    <td><input value="1.52" type="number"></td>
+                    <td><input value="3" type="number"></td>
+                    <td><input value="24500" type="number" oninput="autoCalcLeaseRow(this)"></td>
+                    <td><select><option>Sand</option><option>Bajri</option><option>RBM</option></select></td>
+                    <td><select><option>Existing</option><option>Proposed</option></select></td>
+                    <td><textarea rows="2">—</textarea></td>
+                    <td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-navy" onclick="previewAnnexure('II')">👁 Preview as PDF Page</button>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: ANNEXURE III
+      ═══════════════════════════════════ -->
+      <div id="view-annexure3" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Annexure III — Cluster Details</div><div class="sec-sub">Clusters and contiguous clusters with excavation calculations</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadXLTemplate('anx3')">⬇ Excel Template</button>
+            <label class="btn btn-teal btn-sm" style="cursor:pointer">⬆ Upload Excel <input type="file" accept=".xlsx,.xls" hidden onchange="uploadExcel(event,'anx3')"></label>
+          </div>
+        </div>
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Cluster Details</h3><p>Total Mineral = Total Excavation × 60% (EMGSM 2020)</p></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx3-clusters')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>River</th><th>Cluster No.</th><th>Lease No.</th><th>Location</th><th>Village</th><th>Area (Ha)</th><th>Total Excav. (MT)</th><th>Mineral Excav. (MT) @60%</th><th></th></tr></thead>
+                <tbody id="anx3-clusters">
+                  <tr><td><input value="Sutlej"></td><td><input value="1"></td><td><textarea rows="4">NPRO_JL_PL_ST_61&#10;NPRO_JL_PL_ST_62&#10;NPRO_JL_PL_ST_63&#10;NPRO_JL_PL_ST_64</textarea></td><td><select><option>Riverbed</option><option>Patta Land</option></select></td><td><textarea rows="3">Mizapur,&#10;Fatehpur&#10;Bhagwan</textarea></td><td><input value="120.25" type="number" oninput="calcMineral(this)"></td><td><input value="23938015.24" type="number" oninput="calcMineral(this)" class="excav-in"></td><td class="mineral-out">14362809.14</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="anx-block" style="margin-top:16px">
+          <div class="anx-header">
+            <div><h3>Contiguous Clusters</h3></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx3-cont')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>River</th><th>Cont. Cluster No.</th><th>Cluster No.</th><th># Leases</th><th>Location</th><th>Distance</th><th>Village</th><th>Area (Ha)</th><th>Mineral (MT) @60%</th><th></th></tr></thead>
+                <tbody id="anx3-cont">
+                  <tr><td><input value="Sutlej"></td><td><input value="CC-1"></td><td><input value="1,2,3"></td><td><input value="3" type="number"></td><td><select><option>Riverbed</option><option>Patta Land</option></select></td><td><input value="0.55km"></td><td><textarea rows="3">Minwal,&#10;Mau Sahib,&#10;Burewal</textarea></td><td><input value="150.00" type="number"></td><td><input value="8200000" type="number"></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-navy" onclick="previewAnnexure('III')">👁 Preview as PDF Page</button>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: ANNEXURE IV
+      ═══════════════════════════════════ -->
+      <div id="view-annexure4" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Annexure IV — Transportation Routes</div><div class="sec-sub">Individual leases and cluster transport routes</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadXLTemplate('anx4')">⬇ Excel Template</button>
+            <label class="btn btn-teal btn-sm" style="cursor:pointer">⬆ Upload Excel <input type="file" accept=".xlsx,.xls" hidden onchange="uploadExcel(event,'anx4')"></label>
+          </div>
+        </div>
+        <div class="anx-block">
+          <div class="anx-header">
+            <div><h3>Individual Lease Transportation Routes</h3></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx4-ind')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Sl.</th><th>Lease No.</th><th>Route No.</th><th>Tippers/Day (Lease)</th><th>Tippers/Day (All)</th><th>Length (KM)</th><th>Road Type</th><th>Recommendation</th><th>Constructed By</th><th>Route Map</th><th></th></tr></thead>
+                <tbody id="anx4-ind">
+                  <tr><td>1</td><td><textarea rows="2">Jalandhar Sutlej-1&#10;Vill-Kadiana</textarea></td><td><textarea rows="3">A-A'&#10;B-B'&#10;C-C'</textarea></td><td><input value="12" type="number"></td><td><input value="20" type="number"></td><td><input value="0.73" type="number"></td><td><select><option>Black Topped</option><option>Unpaved</option></select></td><td><select><option>Black Topped</option><option>Unpaved</option></select></td><td><select><option>Govt</option><option>Lease Owner</option></select></td><td><input value="Route Map attached"></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="anx-block" style="margin-top:16px">
+          <div class="anx-header">
+            <div><h3>Cluster Transportation Routes</h3></div>
+            <div class="anx-header-actions"><button class="btn btn-xs btn-outline" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="addAnxRow('anx4-cluster')">+ Row</button></div>
+          </div>
+          <div class="anx-body">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Cluster No.</th><th>Route No.</th><th>Tippers/Day (Cluster)</th><th>Tippers/Day (All)</th><th>Length (KM)</th><th>Road Type</th><th>Recommendation</th><th>Constructed By</th><th>Route Map</th><th></th></tr></thead>
+                <tbody id="anx4-cluster">
+                  <tr><td><textarea rows="3">Jalandhar Sutlej 1,2&#10;Jalandhar Sutlej 3,4,5,6</textarea></td><td><textarea rows="3">A-A', B-B'&#10;C-C' TO F-F'</textarea></td><td><input value="24" type="number"></td><td><input value="80" type="number"></td><td><input value="8.21" type="number"></td><td><select><option>Black Topped</option><option>Unpaved</option></select></td><td><select><option>Black Topped</option><option>Unpaved</option></select></td><td><select><option>Govt</option><option>Lease Owner</option></select></td><td><input value="Route Map attached"></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-navy" onclick="previewAnnexure('IV')">👁 Preview as PDF Page</button>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: SUMMARY TABLES
+      ═══════════════════════════════════ -->
+      <div id="view-tables" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Summary Data Tables</div><div class="sec-sub">Projected demand, auctioned sites, source-wise excavation summary</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadXLTemplate('tables')">⬇ Excel Template</button>
+            <label class="btn btn-teal btn-sm" style="cursor:pointer">⬆ Upload Excel<input type="file" accept=".xlsx,.xls" hidden onchange="uploadExcel(event,'tables')"></label>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <div><div class="card-title">Projected Demand of Gravel (MT) — District-wise</div><div class="card-sub">Editable · Auto-totals · Export ready</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-xs btn-outline" onclick="addDemandRow()">+ Row</button>
+              <button class="btn btn-xs btn-navy" onclick="exportTablePDF('demand')">PDF</button>
+            </div>
+          </div>
+          <div class="card-pad" style="padding-top:0">
+            <div class="tbl-wrap" id="demand-table-wrap">
+              <table id="demand-table">
+                <thead><tr><th>Sr.</th><th>District Name</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>2026-27</th><th>2027-28</th><th></th></tr></thead>
+                <tbody id="demand-tbody"></tbody>
+                <tfoot><tr style="background:var(--navy);color:#fff"><td colspan="2" style="font-weight:700;padding:8px 14px;font-size:12px">TOTAL</td><td id="d-t1" style="padding:8px 14px;font-size:12px">—</td><td id="d-t2" style="padding:8px 14px;font-size:12px">—</td><td id="d-t3" style="padding:8px 14px;font-size:12px">—</td><td id="d-t4" style="padding:8px 14px;font-size:12px">—</td><td id="d-t5" style="padding:8px 14px;font-size:12px">—</td><td id="d-t6" style="padding:8px 14px;font-size:12px">—</td><td></td></tr></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <div><div class="card-title">Source-wise Summary of Excavation Quantity</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-xs btn-outline" onclick="addSourceRow()">+ Row</button>
+              <button class="btn btn-xs btn-navy" onclick="exportTablePDF('source')">PDF</button>
+            </div>
+          </div>
+          <div class="card-pad" style="padding-top:0">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Source</th><th>No. of Sites</th><th>Area (Ha)</th><th>Total Excav. (T)</th><th>Excav. @60% EMGSM</th><th></th></tr></thead>
+                <tbody id="source-tbody">
+                  <tr><td><input value="River bed (Existing)"></td><td><input value="14" type="number"></td><td><input value="320.50" type="number"></td><td><input value="12500000" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">7500000</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                  <tr><td><input value="River bed (New Proposed)"></td><td><input value="8" type="number"></td><td><input value="180.20" type="number"></td><td><input value="8200000" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">4920000</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                  <tr><td><input value="Agriculture land, pattas etc. (Existing)"></td><td><input value="5" type="number"></td><td><input value="45.80" type="number"></td><td><input value="1800000" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">1080000</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                  <tr><td><input value="Desilting sites (Proposed)"></td><td><input value="3" type="number"></td><td><input value="71.49" type="number"></td><td><input value="3500000" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">2100000</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                  <tr><td><input value="M-Sand (Proposed)"></td><td><input value="0" type="number"></td><td><input value="0" type="number"></td><td><input value="0" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">0</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Proforma — Auctioned Sites of District Jalandhar</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-xs btn-outline" onclick="addAuctionRow()">+ Row</button>
+              <button class="btn btn-xs btn-navy">PDF</button>
+            </div>
+          </div>
+          <div class="card-pad" style="padding-top:0">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Sr.</th><th>Site Name</th><th>Type</th><th>Date of Grant</th><th>Start of Contract</th><th>Qty Allowed EC (MT/Yr)</th><th>Qty Extracted (MT)</th><th>Balance Qty</th><th>EC Status</th><th>Remarks</th><th></th></tr></thead>
+                <tbody id="auction-tbody">
+                  <tr><td>1</td><td><textarea rows="2">Jalandhar Sutlej-1&#10;Vill-Kadiana</textarea></td><td><select><option>PMS</option><option>CMS</option><option>S</option><option>C</option><option>RSM</option></select></td><td><input type="date" value="2024-04-01"></td><td><input type="date" value="2024-06-01"></td><td><input value="50000" type="number"></td><td><input value="12000" type="number"></td><td><input value="38000" type="number"></td><td><select><option>Valid</option><option>Expired</option><option>Pending</option></select></td><td><textarea rows="2">—</textarea></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: E-SIGNATURES
+      ═══════════════════════════════════ -->
+      <div id="view-esignature" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Digital Signature Panel</div><div class="sec-sub">Sequential e-signature workflow. Each authority must sign in order. Once signed, it cannot be undone without admin override.</div></div>
+        </div>
+        <div class="notif notif-warn" style="margin-bottom:20px">⚠️ <strong>Important:</strong> Signatures proceed in strict hierarchy. Authority 1 must sign before Authority 2 is notified, and so on. The PDF will be locked after all signatures are collected.</div>
+        <div class="g2">
+          <div id="sig-list" style="display:flex;flex-direction:column;gap:16px"></div>
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="card-header"><div class="card-title">Audit Log</div></div>
+              <div class="card-pad">
+                <div id="sig-audit" style="display:flex;flex-direction:column;gap:8px;font-size:12px;max-height:300px;overflow-y:auto"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Signature Methods Supported</div></div>
+              <div class="card-pad">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="notif notif-success">✅ OTP-based e-Signature</div>
+                  <div class="notif notif-success">✅ Aadhaar eSign Integration</div>
+                  <div class="notif notif-info">🔷 DSC (Digital Signature Certificate)</div>
+                  <div class="notif notif-success">✅ Timestamp &amp; Audit Trail</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════
+           VIEW: FINAL PDF
+      ═══════════════════════════════════ -->
+      <div id="view-final-pdf" class="view">
+        <div class="sec-header">
+          <div><div class="sec-title">Final PDF Assembly</div><div class="sec-sub">All sections compiled into one government-format report</div></div>
+          <div class="sec-actions">
+            <button class="btn btn-outline btn-sm">Preview Full PDF</button>
+            <button class="btn btn-gold" onclick="generateFinalPDF()">⬇ Generate &amp; Download PDF</button>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Report Sections Checklist</div></div>
+            <div class="card-pad" id="final-checklist"></div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="card-header"><div class="card-title">Send to Authority</div></div>
+              <div class="card-pad">
+                <div class="field-group">
+                  <div class="field"><label>Send to (Email / Authority)</label><input type="email" placeholder="authority@punjab.gov.in"></div>
+                  <div class="field"><label>Message</label><textarea rows="3" placeholder="Please review and sign the attached DSR report."></textarea></div>
+                  <button class="btn btn-teal">📧 Send for Review</button>
+                </div>
+              </div>
+            </div>
+            <div class="gov-preview" style="border-radius:var(--r-xl);overflow:hidden">
+              <div class="gov-page">
+                <div class="gov-annexure-tag">DSR</div>
+                <div class="gov-header-line">Enforcement &amp; Monitoring Guidelines for Sand Mining</div>
+                <div class="gov-page-title" id="prev-title">District Survey Report for Sand Mining</div>
+                <div style="font-size:11px;margin-bottom:4px"><strong>District:</strong> <span id="prev-dist">Jalandhar</span> &nbsp; <strong>State:</strong> Punjab &nbsp; <strong>Year:</strong> <span id="prev-yr">2025-26</span></div>
+                <div class="gov-section-title">Preface</div>
+                <div style="font-size:10px;line-height:1.7" id="prev-preface">This District Survey Report (DSR) for Jalandhar District has been prepared in compliance with EMGSM 2020...</div>
+                <div class="gov-section-title">Chapter Index</div>
+                <table class="gov-table" id="prev-chapters"></table>
+                <div class="gov-footer-line">
+                  <div>PREPARED BY: SUB-DIVISIONAL COMMITTEE OF JALANDHAR DISTRICT<br>ASSISTED BY: RSP GREEN DEVELOPMENT AND LABORATORIES PVT. LTD</div>
+                  <div>Page 1</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-body -->
+  </div><!-- /main-area -->
+</div><!-- /shell -->
+
+<!-- MODAL for Annexure Preview / Graph Export -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:200;overflow:auto;padding:40px 20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:var(--r-2xl);max-width:860px;margin:0 auto;box-shadow:var(--sh-xl);overflow:hidden">
+    <div style="background:var(--navy);padding:20px 28px;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#fff;font-weight:700;font-size:15px" id="modal-title">Preview</div>
+      <button onclick="closeModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div id="modal-body" style="padding:28px;max-height:80vh;overflow-y:auto"></div>
+    <div style="padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn btn-gold" onclick="closeModal()">⬇ Include in Final PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+const state = {
+  chapters: [
+    {id:1,name:'CHAPTER 1 — INTRODUCTION',summary:'Overview of the district and purpose of the DSR under EMGSM 2020 guidelines.'},
+    {id:2,name:'CHAPTER 2 — OVERVIEW OF MINING ACTIVITIES IN THE DISTRICT',summary:'Current and historical sand mining activities, lease details, and district statistics.'},
+    {id:3,name:'CHAPTER 3 — PROCESS OF DEPOSITION OF SEDIMENTS IN THE RIVERS OF THE DISTRICT',summary:'River morphology, sedimentation rates, and annual replenishment estimates.'},
+    {id:4,name:'CHAPTER 4 — GENERAL PROFILE OF THE DISTRICT',summary:'Geographic, demographic, and administrative profile of Jalandhar District.'},
+    {id:5,name:'CHAPTER 5 — PHYSIOGRAPHY OF THE DISTRICT',summary:'Terrain, drainage patterns, river systems, and physical features.'},
+    {id:6,name:'CHAPTER 6 — GEOLOGY AND MINERAL WEALTH',summary:'Geological formations, mineral deposits, and subsurface characteristics.'},
+    {id:7,name:'CHAPTER 7 — ESTIMATION OF DEPOSITS AND REPLENISHMENT STUDIES',summary:'Scientific estimation of available sand deposits and annual natural replenishment.'},
+    {id:8,name:'CHAPTER 8 — TRANSPORT',summary:'Transportation infrastructure, road conditions, and logistics for mining operations.'},
+    {id:9,name:'CHAPTER 9 — REMEDIAL MEASURE TO MITIGATE THE IMPACT OF MINING',summary:'Environmental safeguards, monitoring mechanisms, and impact mitigation plans.'},
+    {id:10,name:'CHAPTER 10 — CONCLUSION',summary:'Summary findings, recommendations, and compliance declarations.'}
+  ],
+  plates:[],
+  graphs:[],
+  signatures:[
+    {id:1,role:'Sub-Divisional Officer',name:'Rajinder Kumar',dept:'Revenue Department, Jalandhar',order:1,signed:true,signedAt:'May 20, 2026 · 10:32 AM',method:'Aadhaar eSign'},
+    {id:2,role:'District Mining Officer',name:'Dr. Suresh Verma',dept:'Dept. of Geology & Mining, Punjab',order:2,signed:false,signedAt:null,method:null},
+    {id:3,role:'Deputy Commissioner',name:'IAS Officer (Deputed)',dept:'DC Office, Jalandhar',order:3,signed:false,signedAt:null,method:null},
+    {id:4,role:'Director, Mining',name:'Director of Mines',dept:'Punjab State Mining Directorate',order:4,signed:false,signedAt:null,method:null},
+    {id:5,role:'Principal Secretary',name:'Principal Secretary (Mines)',dept:'Govt. of Punjab',order:5,signed:false,signedAt:null,method:null}
+  ],
+  demandDistricts:['Jalandhar','Ludhiana','Amritsar','Patiala','Gurdaspur','Hoshiarpur','Kapurthala','SBS Nagar','Rupnagar','Fatehgarh Sahib','Moga','Firozpur','Fazilka','Muktsar','Bathinda','Sangrur','Barnala','Mansa','Pathankot','Tarn Taran'],
+  progress:{}
+};
+let graphCharts = {};
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('view-'+id);
+  if(el) el.classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles={
+    'dashboard':'Dashboard','workflow':'Report Workflow','front-matter':'Front Matter',
+    'chapters':'Chapters','plates':'Plate Section','graphs':'Cross Section Generator',
+    'annexure1':'Annexure I — Sources','annexure2':'Annexure II — Mining Leases',
+    'annexure3':'Annexure III — Clusters','annexure4':'Annexure IV — Transport',
+    'tables':'Summary Data Tables','esignature':'E-Signature Panel','final-pdf':'Final PDF Assembly'
+  };
+  document.getElementById('page-title').textContent = titles[id]||'';
+  if(id==='dashboard') renderDashboardProgress();
+  if(id==='esignature') renderSignatures();
+  if(id==='final-pdf') renderFinalChecklist();
+  if(id==='tables') initDemandTable();
+  updateProgress();
+}
+
+// ════════════════════════════════════════════════
+//  DASHBOARD PROGRESS
+// ════════════════════════════════════════════════
+function renderDashboardProgress(){
+  const sections=[
+    {label:'Front Matter',pct:state.plates.length>0?100:60},
+    {label:'Chapters',pct:100},
+    {label:'Plate Section',pct:Math.min(100,state.plates.length*25)},
+    {label:'Cross Sections',pct:state.graphs.length>0?80:0},
+    {label:'Annexure I',pct:55},
+    {label:'Annexure II',pct:40},
+    {label:'Annexure III',pct:40},
+    {label:'Annexure IV',pct:40},
+    {label:'Summary Tables',pct:30},
+    {label:'E-Signatures',pct:Math.round(state.signatures.filter(s=>s.signed).length/state.signatures.length*100)},
+  ];
+  const el=document.getElementById('progress-list');
+  if(!el)return;
+  el.innerHTML=sections.map(s=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="font-weight:600;color:var(--text)">${s.label}</span>
+        <span style="color:${s.pct>=100?'var(--green)':s.pct>0?'var(--teal)':'var(--text-faint)'};font-weight:700">${s.pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${s.pct}%;background:${s.pct>=100?'var(--green)':'linear-gradient(90deg,var(--teal),var(--teal-light))'}"></div></div>
+    </div>
+  `).join('');
+  const avg=Math.round(sections.reduce((a,b)=>a+b.pct,0)/sections.length);
+  const badge=document.getElementById('badge-complete');
+  if(badge) badge.textContent=avg+'%';
+}
+
+function updateProgress(){
+  document.getElementById('dash-files').textContent=state.plates.length;
+  document.getElementById('dash-sigs').textContent=state.signatures.filter(s=>!s.signed).length;
+  renderDashboardProgress();
+  // Sync preview
+  const pt=document.getElementById('prev-title');
+  const pd=document.getElementById('prev-dist');
+  const py=document.getElementById('prev-yr');
+  const pp=document.getElementById('prev-preface');
+  const pc=document.getElementById('prev-chapters');
+  const fmTitle=document.getElementById('fm-title');
+  const fmDist=document.getElementById('fm-district');
+  const fmYr=document.getElementById('fm-year');
+  const fmPref=document.getElementById('fm-preface');
+  if(pt&&fmTitle) pt.textContent=fmTitle.value;
+  if(pd&&fmDist) pd.textContent=fmDist.value;
+  if(py&&fmYr) py.textContent=fmYr.value;
+  if(pp&&fmPref) pp.textContent=fmPref.value.substring(0,200)+'...';
+  if(pc) pc.innerHTML='<thead><tr style="background:#dce3f0"><th style="border:1px solid #333;padding:5px">No.</th><th style="border:1px solid #333;padding:5px">Chapter</th></tr></thead><tbody>'+state.chapters.slice(0,5).map((c,i)=>`<tr><td style="border:1px solid #555;padding:4px 7px">${i+1}</td><td style="border:1px solid #555;padding:4px 7px">${c.name}</td></tr>`).join('')+'</tbody>';
+}
+
+// ════════════════════════════════════════════════
+//  CHAPTERS
+// ════════════════════════════════════════════════
+function renderChapters(){
+  const el=document.getElementById('chapter-list');
+  if(!el)return;
+  el.innerHTML=state.chapters.map((ch,i)=>`
+    <div class="chapter-item" id="ch-${ch.id}">
+      <div class="ch-num">${i+1}</div>
+      <div class="ch-content">
+        <input class="ch-edit" value="${ch.name}" oninput="state.chapters[${i}].name=this.value;updateProgress()">
+        <input style="font-size:12px;color:var(--text-muted);border:1.5px solid transparent;border-radius:var(--r-sm);padding:3px 8px;background:transparent;width:100%;transition:.15s" value="${ch.summary}" oninput="state.chapters[${i}].summary=this.value" onfocus="this.style.borderColor='var(--border)'" onblur="this.style.borderColor='transparent'">
+      </div>
+      <div style="display:flex;gap:6px;align-items:start;flex-shrink:0">
+        ${i>0?`<button class="btn btn-xs btn-outline" onclick="moveChapter(${i},-1)">↑</button>`:''}
+        ${i<state.chapters.length-1?`<button class="btn btn-xs btn-outline" onclick="moveChapter(${i},1)">↓</button>`:''}
+        <button class="btn btn-xs btn-danger" onclick="deleteChapter(${ch.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addChapter(){
+  state.chapters.push({id:Date.now(),name:'NEW CHAPTER — TITLE',summary:'Chapter summary text...'});
+  renderChapters(); updateProgress();
+}
+
+function deleteChapter(id){
+  if(!confirm('Remove this chapter?'))return;
+  state.chapters=state.chapters.filter(c=>c.id!==id);
+  renderChapters(); updateProgress();
+}
+
+function moveChapter(idx,dir){
+  const arr=state.chapters;
+  const tmp=arr[idx];arr[idx]=arr[idx+dir];arr[idx+dir]=tmp;
+  renderChapters();
+}
+
+// Init chapters on load
+document.addEventListener('DOMContentLoaded',()=>{
+  renderChapters();
+  renderDashboardProgress();
+  initDemandTable();
+  addGraphSection();
+  renderSignatures();
+  renderFinalChecklist();
+  updateProgress();
+});
+
+// ════════════════════════════════════════════════
+//  PLATES
+// ════════════════════════════════════════════════
+function handleFrontUpload(e,type){
+  const file=e.target.files[0];
+  if(!file)return;
+  const el=document.getElementById(type+'-uploaded');
+  if(el){
+    el.style.display='block';
+    el.innerHTML=`<div class="file-item"><div class="file-icon" style="background:#fee2e2">📄</div><div class="file-info"><div class="file-name">${file.name}</div><div class="file-meta">${(file.size/1024).toFixed(1)} KB · Uploaded</div></div><span class="badge badge-green">✓ Ready</span></div>`;
+  }
+}
+
+function handlePlateUpload(e){
+  const files=Array.from(e.target.files);
+  files.forEach(f=>{
+    state.plates.push({id:Date.now()+Math.random(),name:f.name,type:f.type,size:f.size,kind:f.type.includes('pdf')?'PDF':'Image'});
+  });
+  renderPlates(); updateProgress();
+}
+
+function renderPlates(){
+  const el=document.getElementById('plate-list');
+  if(!el)return;
+  if(!state.plates.length){
+    el.innerHTML='<div class="empty-state"><span>🗂️</span><div class="txt-bold">No plates uploaded yet</div><p>Click "Upload Files" to add PDFs and images</p></div>';
+    return;
+  }
+  el.innerHTML=state.plates.map((p,i)=>`
+    <div class="file-item">
+      <div class="file-icon" style="background:${p.kind==='PDF'?'#fee2e2':'#d1fae5'}">${p.kind==='PDF'?'📄':'🖼️'}</div>
+      <div class="file-info">
+        <div class="file-name">Plate ${i+1} — ${p.name}</div>
+        <div class="file-meta">${(p.size/1024).toFixed(1)} KB · ${p.kind}</div>
+      </div>
+      <span class="badge badge-teal">Page ${i+1}</span>
+      <button class="btn btn-xs btn-danger" onclick="deletePlate(${p.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function deletePlate(id){
+  state.plates=state.plates.filter(p=>p.id!==id);
+  renderPlates(); updateProgress();
+}
+
+function triggerUpload(id){
+  document.getElementById(id).click();
+}
+
+// ════════════════════════════════════════════════
+//  CROSS SECTION GRAPHS
+// ════════════════════════════════════════════════
+function addGraphSection(){
+  const id='g'+Date.now();
+  state.graphs.push({id,name:'Sutlej Chainage 14K+500',dist:'0,10,20,30,40,50,60,70',pre:'262,261.4,260.7,259.8,258.9,259.2,260.1,261',post:'261.8,261,260.2,259.3,258.4,258.8,259.6,260.5',red:'258.5',thal:'257.4',area:'12.5',noMine:'2.2',bulk:'1.52',pct:'60'});
+  renderGraphSections();
+}
+
+function renderGraphSections(){
+  const el=document.getElementById('graph-sections');
+  if(!el)return;
+  // Destroy old charts
+  Object.values(graphCharts).forEach(c=>c&&c.destroy());
+  graphCharts={};
+  el.innerHTML=state.graphs.map(g=>buildGraphHTML(g)).join('');
+  state.graphs.forEach(g=>drawGraph(g));
+}
+
+function buildGraphHTML(g){
+  const out=calcGraph(g);
+  return `
+  <div class="graph-section" id="gs-${g.id}">
+    <div class="graph-section-header">
+      <div style="flex:1"><h3><input value="${g.name}" oninput="updateGraph('${g.id}','name',this.value)" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;font-size:14px;font-weight:700;width:100%;outline:none"></h3></div>
+      <button class="btn btn-xs btn-danger" onclick="deleteGraph('${g.id}')">Delete Section</button>
+    </div>
+    <div class="graph-section-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div class="field-group">
+          <div class="field"><label>Distance Array (m) — comma separated</label><input value="${g.dist}" oninput="updateGraph('${g.id}','dist',this.value)"></div>
+          <div class="field"><label>Pre-Monsoon Elevation Array (m)</label><input value="${g.pre}" oninput="updateGraph('${g.id}','pre',this.value)"></div>
+          <div class="field"><label>Post-Monsoon Elevation Array (m)</label><input value="${g.post}" oninput="updateGraph('${g.id}','post',this.value)"></div>
+        </div>
+        <div class="field-group">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Red Line (m)</label><input type="number" value="${g.red}" oninput="updateGraph('${g.id}','red',this.value)"></div>
+            <div class="field"><label>Thalweg (m)</label><input type="number" value="${g.thal}" oninput="updateGraph('${g.id}','thal',this.value)"></div>
+            <div class="field"><label>Total Area (Ha)</label><input type="number" value="${g.area}" oninput="updateGraph('${g.id}','area',this.value)"></div>
+            <div class="field"><label>No Mining Buffer (Ha)</label><input type="number" value="${g.noMine}" oninput="updateGraph('${g.id}','noMine',this.value)"></div>
+            <div class="field"><label>Bulk Density (g/cc)</label><input type="number" value="${g.bulk}" oninput="updateGraph('${g.id}','bulk',this.value)"></div>
+            <div class="field"><label>Mining % (EMGSM)</label><input type="number" value="${g.pct}" oninput="updateGraph('${g.id}','pct',this.value)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.4fr 0.6fr;gap:20px">
+        <div class="chart-box"><canvas id="canvas-${g.id}" height="200"></canvas></div>
+        <div>
+          <div class="kpi-grid" id="kpi-${g.id}">
+            <div class="kpi-item"><div class="kpi-label">Avg Thickness</div><div class="kpi-val">${out.avgThick.toFixed(2)} <span class="kpi-unit">m</span></div></div>
+            <div class="kpi-item"><div class="kpi-label">Potential Area</div><div class="kpi-val">${out.pArea.toFixed(2)} <span class="kpi-unit">Ha</span></div></div>
+            <div class="kpi-item"><div class="kpi-label">Volume</div><div class="kpi-val">${fmtNum(out.volume)} <span class="kpi-unit">m³</span></div></div>
+            <div class="kpi-item"><div class="kpi-label">Allowed (${g.pct}%)</div><div class="kpi-val">${fmtNum(out.allowed)} <span class="kpi-unit">MT</span></div></div>
+          </div>
+          <div class="calc-result-bar" style="margin-top:12px">
+            <div class="result-label">Allowed Excavation Tonnes</div>
+            <div class="result-val">${fmtNum(out.allowed)} MT</div>
+            <div style="font-size:11px;color:var(--teal);margin-top:4px">= ${fmtNum(out.volume)} m³ × ${g.bulk} g/cc × ${g.pct}%</div>
+          </div>
+          <div class="tbl-wrap" style="margin-top:12px;max-height:180px;overflow-y:auto">
+            <table>
+              <thead><tr><th>Dist (m)</th><th>Pre (m)</th><th>Post (m)</th><th>Thick (m)</th></tr></thead>
+              <tbody>${out.dist.map((d,i)=>`<tr><td>${d}</td><td>${out.pre[i]??'—'}</td><td>${out.post[i]??'—'}</td><td>${(out.thick[i]??0).toFixed(2)}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function calcGraph(g){
+  const pa=s=>s.split(',').map(v=>parseFloat(v.trim())||0);
+  const dist=pa(g.dist), pre=pa(g.pre), post=pa(g.post);
+  const red=parseFloat(g.red)||0, thal=parseFloat(g.thal)||0;
+  const thick=post.map(p=>Math.max(0,p-red));
+  const avgThick=thick.length?thick.reduce((a,b)=>a+b,0)/thick.length:0;
+  const pArea=Math.max(0,(parseFloat(g.area)||0)-(parseFloat(g.noMine)||0));
+  const volume=pArea*10000*avgThick;
+  const tonnes=volume*(parseFloat(g.bulk)||0);
+  const allowed=tonnes*((parseFloat(g.pct)||0)/100);
+  return{dist,pre,post,thick,avgThick,pArea,volume,tonnes,allowed,red,thal};
+}
+
+function drawGraph(g){
+  const ctx=document.getElementById('canvas-'+g.id);
+  if(!ctx)return;
+  const out=calcGraph(g);
+  if(graphCharts[g.id]) graphCharts[g.id].destroy();
+  graphCharts[g.id]=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:out.dist,
+      datasets:[
+        {label:'Pre Monsoon',data:out.pre,borderColor:'#0d7a72',backgroundColor:'rgba(13,122,114,.12)',tension:.35,pointRadius:4,pointBackgroundColor:'#0d7a72',fill:false},
+        {label:'Post Monsoon',data:out.post,borderColor:'#c9a227',backgroundColor:'rgba(201,162,39,.12)',tension:.35,pointRadius:4,pointBackgroundColor:'#c9a227',fill:false},
+        {label:'Red Line',data:out.dist.map(()=>out.red),borderColor:'#c0392b',borderDash:[8,5],tension:0,pointRadius:0,borderWidth:2},
+        {label:'Thalweg',data:out.dist.map(()=>out.thal),borderColor:'#2563eb',borderDash:[4,4],tension:0,pointRadius:0,borderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:11},usePointStyle:true,boxWidth:20}},title:{display:true,text:g.name+' — River Cross Section',font:{size:12,weight:'bold'}}},
+      scales:{
+        x:{title:{display:true,text:'Distance from River Bank (m)',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
+        y:{title:{display:true,text:'Elevation (m)',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}}
+      }
+    }
+  });
+}
+
+function updateGraph(id,field,val){
+  const g=state.graphs.find(x=>x.id===id);
+  if(!g)return;
+  g[field]=val;
+  const out=calcGraph(g);
+  const kpi=document.getElementById('kpi-'+id);
+  if(kpi) kpi.innerHTML=`
+    <div class="kpi-item"><div class="kpi-label">Avg Thickness</div><div class="kpi-val">${out.avgThick.toFixed(2)} <span class="kpi-unit">m</span></div></div>
+    <div class="kpi-item"><div class="kpi-label">Potential Area</div><div class="kpi-val">${out.pArea.toFixed(2)} <span class="kpi-unit">Ha</span></div></div>
+    <div class="kpi-item"><div class="kpi-label">Volume</div><div class="kpi-val">${fmtNum(out.volume)} <span class="kpi-unit">m³</span></div></div>
+    <div class="kpi-item"><div class="kpi-label">Allowed (${g.pct}%)</div><div class="kpi-val">${fmtNum(out.allowed)} <span class="kpi-unit">MT</span></div></div>
+  `;
+  drawGraph(g);
+}
+
+function deleteGraph(id){
+  if(!confirm('Delete this cross section?'))return;
+  if(graphCharts[id]) graphCharts[id].destroy();
+  state.graphs=state.graphs.filter(g=>g.id!==id);
+  renderGraphSections();
+}
+
+// ════════════════════════════════════════════════
+//  ANNEXURE HELPERS
+// ════════════════════════════════════════════════
+function addAnxRow(tbodyId){
+  const tb=document.getElementById(tbodyId);
+  if(!tb)return;
+  const cols=tb.closest('table').querySelectorAll('thead th').length;
+  const row=document.createElement('tr');
+  let cells='<td>'+(tb.rows.length+1)+'</td>';
+  for(let i=1;i<cols-1;i++) cells+=`<td><input value=""></td>`;
+  cells+=`<td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>`;
+  row.innerHTML=cells;
+  tb.appendChild(row);
+}
+
+function delRow(btn){
+  btn.closest('tr').remove();
+}
+
+function calcMineral(inp){
+  const row=inp.closest('tr');
+  const excav=parseFloat(row.querySelector('.excav-in')?.value||inp.value)||0;
+  const out=row.querySelector('.mineral-out');
+  if(out) out.textContent=fmtNum(excav*0.6,2);
+}
+
+function calcSourceRow(inp){
+  const row=inp.closest('tr');
+  const excav=parseFloat(inp.value)||0;
+  const out=row.querySelector('.src-60');
+  if(out) out.textContent=fmtNum(excav*0.6,0);
+}
+
+// ════════════════════════════════════════════════
+//  DEMAND TABLE
+// ════════════════════════════════════════════════
+function initDemandTable(){
+  const tb=document.getElementById('demand-tbody');
+  if(!tb||tb.children.length>0)return;
+  state.demandDistricts.forEach((d,i)=>{
+    const row=document.createElement('tr');
+    const v=[Math.round(Math.random()*500000+200000),Math.round(Math.random()*500000+200000),Math.round(Math.random()*500000+200000),Math.round(Math.random()*500000+200000),Math.round(Math.random()*500000+200000),Math.round(Math.random()*500000+200000)];
+    row.innerHTML=`<td style="color:var(--text-faint);font-size:12px">${i+1}</td><td><input value="${d}" style="font-weight:600"></td>${v.map(x=>`<td><input type="number" value="${x}" style="text-align:right" oninput="calcDemandTotals()"></td>`).join('')}<td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>`;
+    tb.appendChild(row);
+  });
+  calcDemandTotals();
+}
+
+function addDemandRow(){
+  const tb=document.getElementById('demand-tbody');
+  if(!tb)return;
+  const row=document.createElement('tr');
+  row.innerHTML=`<td style="color:var(--text-faint);font-size:12px">${tb.rows.length+1}</td><td><input value="New District" style="font-weight:600"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><input type="number" value="0" style="text-align:right" oninput="calcDemandTotals()"></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>`;
+  tb.appendChild(row);
+  calcDemandTotals();
+}
+
+function calcDemandTotals(){
+  const tb=document.getElementById('demand-tbody');
+  if(!tb)return;
+  const totals=[0,0,0,0,0,0];
+  Array.from(tb.rows).forEach(row=>{
+    const inputs=row.querySelectorAll('input[type=number]');
+    inputs.forEach((inp,i)=>{totals[i]=(totals[i]||0)+(parseFloat(inp.value)||0);});
+  });
+  for(let i=0;i<6;i++){
+    const el=document.getElementById('d-t'+(i+1));
+    if(el) el.textContent=fmtNum(totals[i],0);
+  }
+}
+
+function addSourceRow(){
+  const tb=document.getElementById('source-tbody');
+  if(!tb)return;
+  const row=document.createElement('tr');
+  row.innerHTML=`<td><input value="New Source"></td><td><input value="0" type="number"></td><td><input value="0" type="number"></td><td><input value="0" type="number" class="src-excav" oninput="calcSourceRow(this)"></td><td class="src-60 mineral-out">0</td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>`;
+  tb.appendChild(row);
+}
+
+function addAuctionRow(){
+  const tb=document.getElementById('auction-tbody');
+  if(!tb)return;
+  const n=tb.rows.length+1;
+  const row=document.createElement('tr');
+  row.innerHTML=`<td>${n}</td><td><textarea rows="2">New Site</textarea></td><td><select><option>PMS</option><option>CMS</option><option>S</option><option>C</option><option>RSM</option></select></td><td><input type="date"></td><td><input type="date"></td><td><input value="0" type="number"></td><td><input value="0" type="number"></td><td><input value="0" type="number"></td><td><select><option>Valid</option><option>Expired</option><option>Pending</option></select></td><td><textarea rows="2">—</textarea></td><td><button class="btn btn-xs btn-danger" onclick="delRow(this)">✕</button></td>`;
+  tb.appendChild(row);
+}
+
+// ════════════════════════════════════════════════
+//  SIGNATURES
+// ════════════════════════════════════════════════
+function renderSignatures(){
+  const el=document.getElementById('sig-list');
+  if(!el)return;
+  el.innerHTML=state.signatures.map((s,i)=>{
+    const prevSigned=i===0||state.signatures[i-1].signed;
+    const canSign=prevSigned&&!s.signed;
+    return `
+    <div class="sig-card" style="border-color:${s.signed?'var(--green)':canSign?'var(--gold)':'var(--border)'}">
+      <div class="sig-num">${s.order}</div>
+      <div class="sig-role">${s.role}</div>
+      <div class="sig-name">${s.name}</div>
+      <div class="sig-dept">${s.dept}</div>
+      ${s.signed
+        ?`<div class="sig-status-done">✅ Digitally Signed</div><div class="sig-time">${s.signedAt} · ${s.method}</div>`
+        :canSign
+          ?`<div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-teal btn-sm" onclick="signDoc(${s.id})">✍️ Sign with Aadhaar</button><button class="btn btn-outline btn-sm" onclick="signDoc(${s.id})">🔑 Use DSC</button></div>`
+          ?`<div class="sig-status-pending pulsing">⏳ Awaiting previous authority...</div>`
+          :`<div class="sig-status-pending pulsing">⏳ Awaiting previous authority...</div>`
+        :`<div class="sig-status-pending pulsing">⏳ Awaiting previous authority...</div>`
+      }
+    </div>`;
+  }).join('');
+  const audit=document.getElementById('sig-audit');
+  if(audit){
+    const signed=state.signatures.filter(s=>s.signed);
+    audit.innerHTML=signed.length
+      ?signed.map(s=>`<div class="notif notif-success">✅ <strong>${s.role}</strong> signed · ${s.signedAt}</div>`).join('')
+      +'<div class="notif notif-info">🔷 Awaiting Authority #'+(signed.length+1)+'</div>'
+      :'<div class="txt-tiny" style="color:var(--text-faint);padding:8px">No signatures yet.</div>';
+  }
+}
+
+function signDoc(id){
+  const otp=prompt('Enter OTP sent to registered mobile (demo: use 123456)');
+  if(otp==='123456'){
+    const s=state.signatures.find(x=>x.id===id);
+    if(s){s.signed=true;s.signedAt='May 21, 2026 · '+new Date().toLocaleTimeString();s.method='Aadhaar eSign';}
+    renderSignatures(); updateProgress();
+    alert('✅ Signature recorded successfully. The next authority has been notified.');
+  } else if(otp!==null){
+    alert('❌ Invalid OTP. Please try again.');
+  }
+}
+
+// ════════════════════════════════════════════════
+//  FINAL CHECKLIST
+// ════════════════════════════════════════════════
+function renderFinalChecklist(){
+  const el=document.getElementById('final-checklist');
+  if(!el)return;
+  const items=[
+    {label:'Cover Page',done:true},
+    {label:'Preface',done:true},
+    {label:'Table of Contents',done:true},
+    {label:'All 10 Chapters',done:true},
+    {label:'Plate Uploads ('+state.plates.length+' files)',done:state.plates.length>0},
+    {label:'Cross Section Graphs',done:state.graphs.length>0},
+    {label:'Annexure I',done:true},
+    {label:'Annexure II',done:true},
+    {label:'Annexure III',done:true},
+    {label:'Annexure IV',done:true},
+    {label:'Summary Tables',done:true},
+    {label:'E-Signatures ('+state.signatures.filter(s=>s.signed).length+'/'+state.signatures.length+')',done:state.signatures.every(s=>s.signed)},
+  ];
+  el.innerHTML=items.map(item=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="color:${item.done?'var(--green)':'var(--text-faint)'};font-size:16px">${item.done?'✅':'⭕'}</span>
+      <span style="font-size:13px;color:${item.done?'var(--text)':'var(--text-faint)'}">${item.label}</span>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════════
+//  EXCEL TEMPLATE DOWNLOAD
+// ════════════════════════════════════════════════
+const XLTemplates={
+  anx1:{sheets:[
+    {name:'Rivers',headers:['River Name/M-Sand Plant','Total Stretch of River (KM)','Type of River'],rows:[['Sutlej','90.66','Perennial'],['Beas','65.20','Perennial']]},
+    {name:'De-Siltation',headers:['Name of Reservoir/Dam','Controlled By','Latitude','Longitude','District','Tehsil','Village','Size (Ha)'],rows:[['Sutlej Reservoir','State Govt.','31°00\'56"N','75°54\'59"E','Jalandhar','Phillaur','Powari','10.93']]},
+    {name:'Patta Lands',headers:['Owner','SL. No','Area (Ha)','District','Tehsil','Village','Agricultural Land'],rows:[['Owner Name','KH-001','5.20','Jalandhar','Phillaur','Kadiana','Yes']]},
+    {name:'M-Sand Plants',headers:['Plant Name','Owner','District','Tehsil','Village','Geo-location','Quantity Tonnes/Annum'],rows:[['Not Available','Not Available','Jalandhar','Phillaur','—','31.02°N, 75.30°E','0']]}
+  ]},
+  anx2:{sheets:[
+    {name:'Mining Leases',headers:['Sl. No.','River Details','Sand Bar Code','Lease Details','Area (Ha)','Latitude','Longitude','Distance (KM)','Within 500m','Mining Density','Depth (m)','Total Excavation MT/Yr','Mineral','Status','Remarks'],rows:[['1','Jalandhar Sutlej','SB-01','Jalandhar Sutlej-1 Vill-Kadiana','24.50','31°04\'48.86"N','75°53\'39.66"E','0.73','No','1.52','3','24500','Sand','Existing','—']]}
+  ]},
+  anx3:{sheets:[
+    {name:'Cluster Details',headers:['River Name','Cluster No.','Lease No.','Location','Village','Area (Ha)','Total Excavation (MT)','Total Mineral Excav. (MT) @60%'],rows:[['Sutlej','1','NPRO_JL_PL_ST_61\nNPRO_JL_PL_ST_62','Riverbed','Mizapur, Fatehpur','120.25','23938015.24','14362809.14']]},
+    {name:'Contiguous Clusters',headers:['River Name','Contiguous Cluster No.','Cluster No.','# Leases','Location','Distance','Village','Area (Ha)','Mineral (MT) @60%'],rows:[['Sutlej','CC-1','1,2,3','3','Riverbed','0.55km','Minwal, Mau Sahib','150.00','8200000']]}
+  ]},
+  anx4:{sheets:[
+    {name:'Individual Routes',headers:['SL.NO','Lease No.','Route No.','Tippers/Day (Lease)','Tippers/Day (All)','Length (KM)','Road Type','Recommendation','Constructed By','Route Map'],rows:[['1','Jalandhar Sutlej-1 Vill-Kadiana','A-A\'','12','20','0.73','Black Topped','Black Topped','Govt','Route Map attached']]},
+    {name:'Cluster Routes',headers:['Cluster No.','Route No.','Tippers/Day (Cluster)','Tippers/Day (All)','Length (KM)','Road Type','Recommendation','Constructed By','Route Map'],rows:[['Jalandhar Sutlej 1,2','A-A\', B-B\'','24','80','8.21','Black Topped','Black Topped','Govt','Route Map attached']]}
+  ]},
+  tables:{sheets:[
+    {name:'Projected Demand',headers:['Sr. No.','District Name','2022-23','2023-24','2024-25','2025-26','2026-27','2027-28'],rows:[['1','Jalandhar','300000','320000','340000','360000','380000','400000']]},
+    {name:'Source Summary',headers:['Source','No. of Sites','Area (Ha)','Total Excavation (T)','Excavation @60% EMGSM'],rows:[['River bed (Existing)','14','320.50','12500000','7500000']]},
+    {name:'Auctioned Sites',headers:['Sr No.','Site Name','Type','Date of Grant','Contract Start','Qty Allowed EC (MT/Yr)','Qty Extracted (MT)','Balance Qty','EC Status','Remarks'],rows:[['1','Jalandhar Sutlej-1','PMS','2024-04-01','2024-06-01','50000','12000','38000','Valid','—']]}
+  ]}
+};
+
+function downloadXLTemplate(type){
+  const tmpl=XLTemplates[type];
+  if(!tmpl)return;
+  const wb=XLSX.utils.book_new();
+  tmpl.sheets.forEach(sheet=>{
+    const ws=XLSX.utils.aoa_to_sheet([sheet.headers,...sheet.rows]);
+    // Style header row
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const addr=XLSX.utils.encode_cell({r:0,c});
+      if(!ws[addr])continue;
+      ws[addr].s={fill:{patternType:'solid',fgColor:{rgb:'0A1628'}},font:{bold:true,color:{rgb:'FFFFFF'}}};
+    }
+    XLSX.utils.book_append_sheet(wb,ws,sheet.name.substring(0,31));
+  });
+  XLSX.writeFile(wb,type.toUpperCase()+'-Template.xlsx');
+}
+
+function uploadExcel(e,type){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const tmpl=XLTemplates[type];
+      tmpl.sheets.forEach((sheet,si)=>{
+        const wsName=wb.SheetNames[si];
+        if(!wsName)return;
+        const ws=wb.Sheets[wsName];
+        const data=XLSX.utils.sheet_to_json(ws,{header:1});
+        sheet.rows=data.slice(1).filter(r=>r.some(c=>c!==undefined&&c!==''));
+      });
+      alert('✅ Excel uploaded and data loaded! The tables in this Annexure now reflect your uploaded data.\n\nClick "Preview as PDF Page" to see the formatted output.');
+    }catch(err){alert('Error reading Excel file: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ════════════════════════════════════════════════
+//  ANNEXURE PREVIEW (MODAL)
+// ════════════════════════════════════════════════
+function previewAnnexure(num){
+  document.getElementById('modal-title').textContent='Annexure '+num+' — Government Format Preview';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="gov-page" style="width:100%;padding:30px 36px">
+      <div class="gov-annexure-tag">Annexure-${num}</div>
+      <div class="gov-header-line">Enforcement &amp; Monitoring Guidelines for Sand Mining</div>
+      <div class="gov-page-title">Annexure-${num} — ${num==='I'?'Details of Sand/M-Sand Sources':num==='II'?'List of Potential Mining Leases':num==='III'?'Cluster &amp; Contiguous Cluster Details':'Transportation Routes'}</div>
+      <div style="font-size:10px;margin-bottom:10px;color:#555">District: Jalandhar &nbsp;|&nbsp; State: Punjab &nbsp;|&nbsp; Prepared by Sub-Divisional Committee</div>
+      <div class="gov-section-title">Sample Table</div>
+      <table class="gov-table">
+        <thead><tr><th>#</th><th>Name/Details</th><th>Value</th><th>Remarks</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Sutlej River / Sand Source</td><td>90.66 KM</td><td>Perennial</td></tr>
+          <tr><td>2</td><td>Beas River / Sand Source</td><td>65.20 KM</td><td>Perennial</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:15px;font-size:9px;color:#666;font-style:italic">* This is a preview of the government-format PDF page. The actual PDF will include all data entered in the tables above.</div>
+      <div class="gov-footer-line">
+        <div>PREPARED BY: SUB-DIVISIONAL COMMITTEE OF JALANDHAR DISTRICT<br>ASSISTED BY: RSP GREEN DEVELOPMENT AND LABORATORIES PVT. LTD</div>
+        <div>Page 1</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal').style.display='block';
+}
+
+function closeModal(){
+  document.getElementById('modal').style.display='none';
+}
+
+// ════════════════════════════════════════════════
+//  FINAL PDF GENERATION
+// ════════════════════════════════════════════════
+function generateFinalPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const W=210,pad=14;
+  let y=20;
+
+  // Page 1 - Cover
+  doc.setFillColor(10,22,40); doc.rect(0,0,W,40,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(201,162,39);
+  doc.text('GOVERNMENT OF PUNJAB — DISTRICT SURVEY REPORT',W/2,15,{align:'center'});
+  doc.setFontSize(16); doc.setTextColor(255,255,255);
+  const title=document.getElementById('fm-title')?.value||'District Survey Report for Sand Mining';
+  doc.text(title,W/2,28,{align:'center',maxWidth:180});
+  y=55;
+  doc.setTextColor(30,30,30); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('District: '+(document.getElementById('fm-district')?.value||'Jalandhar'),pad,y); y+=7;
+  doc.text('State: '+(document.getElementById('fm-state')?.value||'Punjab'),pad,y); y+=7;
+  doc.text('Year: '+(document.getElementById('fm-year')?.value||'2025-26'),pad,y); y+=7;
+  doc.text('Prepared By: Sub-Divisional Committee, Jalandhar District',pad,y); y+=7;
+  doc.text('Assisted By: RSP Green Development and Laboratories Pvt. Ltd.',pad,y); y+=14;
+
+  doc.setFont('helvetica','bold'); doc.text('PREFACE',pad,y); y+=6;
+  doc.setFont('helvetica','normal');
+  const prefText=document.getElementById('fm-preface')?.value||'DSR Preface...';
+  const prefLines=doc.splitTextToSize(prefText,W-2*pad);
+  doc.text(prefLines,pad,y); y+=prefLines.length*5+10;
+
+  // Chapter Index
+  doc.addPage();
+  doc.setFillColor(10,22,40); doc.rect(0,0,W,12,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(201,162,39);
+  doc.text('ENFORCEMENT & MONITORING GUIDELINES FOR SAND MINING',W/2,8,{align:'center'});
+  doc.setTextColor(30,30,30); y=20;
+  doc.setFontSize(14); doc.text('Chapter Index',pad,y); y+=10;
+  state.chapters.forEach((ch,i)=>{
+    if(y>275){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text(`${i+1}.`,pad,y);
+    doc.setFont('helvetica','normal'); doc.text(ch.name,pad+6,y,{maxWidth:160}); y+=6;
+    doc.setTextColor(100,100,100); doc.setFontSize(8);
+    const sumLines=doc.splitTextToSize(ch.summary,160);
+    doc.text(sumLines,pad+6,y); y+=sumLines.length*4+4;
+    doc.setTextColor(30,30,30); doc.setFontSize(9);
+  });
+
+  // Cross Section Summary
+  if(state.graphs.length){
+    doc.addPage();
+    y=20; doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Cross Section Calculation Summary',pad,y); y+=10;
+    state.graphs.forEach(g=>{
+      if(y>260){doc.addPage();y=20;}
+      const out=calcGraph(g);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(g.name,pad,y); y+=6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text(`Average Thickness: ${out.avgThick.toFixed(2)} m  |  Potential Area: ${out.pArea.toFixed(2)} Ha  |  Volume: ${Math.round(out.volume).toLocaleString()} m³`,pad,y); y+=5;
+      doc.text(`Total Tonnes: ${Math.round(out.tonnes).toLocaleString()} MT  |  Allowed Excavation (${g.pct}%): ${Math.round(out.allowed).toLocaleString()} MT`,pad,y); y+=8;
+    });
+  }
+
+  // Signatures
+  doc.addPage();
+  y=20; doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Digital Signatures',pad,y); y+=10;
+  state.signatures.forEach((s,i)=>{
+    if(y>265){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text(`${s.order}. ${s.role}`,pad,y); y+=5;
+    doc.setFont('helvetica','normal'); doc.text(`Name: ${s.name} | ${s.dept}`,pad,y); y+=5;
+    doc.text(`Status: ${s.signed?'SIGNED — '+s.signedAt:'PENDING'}`,pad,y); y+=7;
+  });
+
+  // Footer on all pages
+  const pageCount=doc.getNumberOfPages();
+  for(let p=1;p<=pageCount;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(80,80,80);
+    doc.line(pad,287,W-pad,287);
+    doc.text('PREPARED BY: SUB-DIVISIONAL COMMITTEE OF JALANDHAR DISTRICT | ASSISTED BY: RSP GREEN DEVELOPMENT AND LABORATORIES PVT. LTD',pad,291);
+    doc.text('Page '+p+' of '+pageCount,W-pad,291,{align:'right'});
+  }
+
+  doc.save('DSR-Jalandhar-'+new Date().toISOString().split('T')[0]+'.pdf');
+}
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+function fmtNum(n,d=0){return Number.isFinite(n)?Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';}
+
+function exportTablePDF(type){}
+</script>
+</body>
+</html>
